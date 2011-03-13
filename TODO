@@ -1,0 +1,8 @@
+[boilerplate]
+https://github.com/robrighter/node-boilerplate/blob/master/server.js
+
+[mongodb]
+http://howtonode.org/express-mongodb
+
+[simple model]
+https://github.com/weekface/jscms/blob/7ef098e0b137cda0cf43d059a6fb5177a300b7d2/model.js
