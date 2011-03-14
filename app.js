@@ -5,8 +5,10 @@ var connect = require('connect'),
 
 
 var Links = require('./model').Model;
+var Clicks = require('./model').Model;
+
 //findByLinkId
-Links.prototype.findByLinkId = function(lid, callback) {
+findByLinkId = function(lid, callback) {
     this.getCollection(function(error, collection) {
       if( error ) callback(error)
       else {
@@ -17,7 +19,12 @@ Links.prototype.findByLinkId = function(lid, callback) {
       }
     });
 };
+
+Links.prototype.findByLinkId = findByLinkId;
+Clicks.prototype.findByLinkId = findByLinkId;
+
 Links = new Model('links','janus','localhost',27017);
+Clicks = new Model('clicks','janus','localhost',27017);
 
 // encode number (base10) as base52 [a-Z]
 function encode52(c) {
@@ -59,6 +66,10 @@ server.get('/:link', function(req,res){
     else if(items=='undefined') 
       res.send('link does not exist...');
     else{
+      click = {"link_id": link_id, "user_agent": req.header('User-Agent'), "referrer": req.header('Referrer'), "host": req.header('Remote-Address') };
+      //res.send(req.header(''));
+      res.send("got " + JSON.stringify(click));
+      Clicks.save(click,function(){})
       res.redirect(items.url);
       console.log("redirected to " + items.url);
       //console.log(JSON.stringify(items));
