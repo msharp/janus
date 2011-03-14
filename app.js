@@ -1,23 +1,69 @@
-var connect = require('connect')
-    , express = require('express')
-    , sys = require('sys')
-    , port = (process.env.PORT || 8081);
+var connect = require('connect'),
+    express = require('express'),
+    sys = require('sys'),
+    port = (process.env.PORT || 8081);
+
+
+var Links = require('./model').Model;
+//findByLinkId
+Links.prototype.findByLinkId = function(lid, callback) {
+    this.getCollection(function(error, collection) {
+      if( error ) callback(error)
+      else {
+        collection.findOne({link_id: lid}, function(error, result) {
+          if( error ) callback(error)
+          else callback(null, result)
+        });
+      }
+    });
+};
+Links = new Model('links','janus','localhost',27017);
+
+// encode number (base10) as base52 [a-Z]
+function encode52(c) {
+    return (c < 52 ? '' : encode52(parseInt(c / 52))) + ((c = c % 52) > 25 ? String.fromCharCode(c + 39) : String.fromCharCode(c + 97));
+};
 
 var server = express.createServer();
 server.configure(function(){
   server.set('root', __dirname)
 });
 
+
 server.get('/', function(req,res){
   res.send("Hello World!");
 });
 
 server.get('/generate', function(req,res){
-    res.send("Generate shorturl for: " + req.query.url);
+  var url = req.query.url;
+  var link_count = 0;
+  Links.countAll(function(error,result){
+    link_count = result;
+    var short_code = encode52(link_count+1);
+    var link = {"link_id": short_code, "url": url}
+    Links.save(link, function(err,lnk){
+      res.send(lnk[0]);
+      console.log("Generated shorturl number " + link_count + " as "+ link.link_id +" for: " + link.url);
+    });
+  });
 });
 
+server.get('/favicon.ico', function(){});
+
 server.get('/:link', function(req,res){
-    res.send("Get uri for shorturl key: " + req.params.link);
+  var link_id = req.params.link;
+  console.log("got linkid " + link_id);
+  Links.findByLinkId(link_id, function(err,items){
+    if(err)
+      console.log(err);
+    else if(items=='undefined') 
+      res.send('link does not exist...');
+    else{
+      res.redirect(items.url);
+      console.log("redirected to " + items.url);
+      //console.log(JSON.stringify(items));
+    }
+  });
 });
 
 server.listen(port);
