@@ -66,9 +66,8 @@ server.get('/:link', function(req,res){
     else if(items=='undefined') 
       res.send('link does not exist...');
     else{
-      click = {"link_id": link_id, "user_agent": req.header('User-Agent'), "referrer": req.header('Referrer'), "host": req.header('Remote-Address') };
-      //res.send(req.header(''));
-      res.send("got " + JSON.stringify(click));
+      click = {"link_id": link_id, "user_agent": req.header('User-Agent'), "referrer": req.header('Referrer'), "from": req.header('From') };
+      //res.send("got " + JSON.stringify(click));
       Clicks.save(click,function(){})
       res.redirect(items.url);
       console.log("redirected to " + items.url);
