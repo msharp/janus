@@ -1,4 +1,9 @@
+var sys = require("sys"),
+    mongo = require('mongodb')
+ 
 var Links = require('./model').Model;
+
+Links = new Model('links','janus','localhost',27017);
 
 //findByLinkId
 Links.prototype.findByLinkId = function(id, callback) {
