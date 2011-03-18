@@ -4,7 +4,27 @@ var connect = require('connect'),
     port = (process.env.PORT || 8081);
 
 
-var Links = require('./model').Model;
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+mongoose.connect('mongodb://localhost/janus'); // connect to mongo
+
+var LinkSchema = new Schema({
+     link_id : String,
+     url : String,
+     generate_date : Date
+});   
+mongoose.model('Link',LinkSchema);
+
+
+var link = mongoose.model('Link');
+
+
+//require('./models/links');
+require('./models/clicks');
+
+//var link = mongoose.model('Link',Link);
+
+/*
 var Clicks = require('./model').Model;
 
 //findByLinkId
@@ -39,6 +59,7 @@ Clicks.prototype.findByLinkId = function(lid, callback) {
 
 Links = new Model('links','janus','localhost', 27017);
 Clicks = new Model('clicks','janus','localhost',27017);
+*/
 
 // encode number (base10) as base52 [a-Z]
 function encode52(c) {
@@ -92,15 +113,22 @@ server.get('/clicks/:link', function(req,res){
 server.get('/favicon.ico', function(){});
 
 server.get('/:link', function(req,res){
-  var link_id = req.params.link;
-  console.log("got linkid " + link_id);
-  Links.findByLinkId(link_id, function(err,items){
-    if(err)
-      console.log(err);
-    else if(items=='undefined') 
-      res.send('link does not exist...');
-    else{
-      click = {
+  var linkid = req.params.link;
+  console.log("got linkid " + linkid);
+  
+  link.find({link_id:linkid}, function(err,docs){
+      if (err)
+        console.log("error");
+      else if (docs == 'undefined')
+        console.log("link not found");
+      else{  
+        console.log('found url ' + docs[0].url);
+        res.redirect(docs[0].url);
+      }
+  });
+    
+/*
+  var click = {
         "link_id": link_id, 
         "user_agent": req.header('User-Agent'), 
         "referrer": req.header('Referrer'), 
@@ -108,10 +136,8 @@ server.get('/:link', function(req,res){
         "time": new Date() 
       };
       Clicks.save(click,function(){})
-      res.redirect(items[0].url);
-      console.log("redirected to " + items.url);
-    }
-  });
+*/
+
 });
 
 server.listen(port);
