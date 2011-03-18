@@ -1,28 +1,15 @@
 var connect = require('connect'),
     express = require('express'),
+    mongoose = require('mongoose'),
     sys = require('sys'),
     port = (process.env.PORT || 8081);
 
-
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-mongoose.connect('mongodb://localhost/janus'); // connect to mongo
-
-var LinkSchema = new Schema({
-     link_id : String,
-     url : String,
-     generate_date : Date
-});   
-mongoose.model('Link',LinkSchema);
-
-
-var link = mongoose.model('Link');
-
-
-//require('./models/links');
+require('./models/links');
 require('./models/clicks');
 
-//var link = mongoose.model('Link',Link);
+mongoose.connect('mongodb://localhost/janus'); // connect to mongo
+var link = mongoose.model('Link');
+var click = mongoose.model('Click');
 
 /*
 var Clicks = require('./model').Model;
@@ -113,30 +100,33 @@ server.get('/clicks/:link', function(req,res){
 server.get('/favicon.ico', function(){});
 
 server.get('/:link', function(req,res){
+  
   var linkid = req.params.link;
   console.log("got linkid " + linkid);
   
   link.find({link_id:linkid}, function(err,docs){
-      if (err)
+      if (err){
         console.log("error");
-      else if (docs == 'undefined')
+        res.send("error");
+      }  
+      else if ( typeof docs[0] == 'undefined'){
         console.log("link not found");
+        res.send("link not found");
+      }
       else{  
         console.log('found url ' + docs[0].url);
+        
+        var clickReport = new click();
+        clickReport.link_id = linkid;
+        clickReport.user_agent =  req.header('User-Agent'), 
+        clickReport.referrer = req.header('Referrer'), 
+        clickReport.from = req.header('From'), 
+        clickReport.time = new Date()
+        clickReport.save(function(err){});
+
         res.redirect(docs[0].url);
-      }
+      } 
   });
-    
-/*
-  var click = {
-        "link_id": link_id, 
-        "user_agent": req.header('User-Agent'), 
-        "referrer": req.header('Referrer'), 
-        "from": req.header('From'), 
-        "time": new Date() 
-      };
-      Clicks.save(click,function(){})
-*/
 
 });
 
