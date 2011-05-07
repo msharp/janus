@@ -94,6 +94,7 @@ server.get('/favicon.ico', function(){});
 server.get('/:link', function(req,res){
   var link_id = req.params.link;
   console.log("got linkid " + link_id);
+  console.log(req.headers);
   Links.findByLinkId(link_id, function(err,items){
     if(err)
       console.log(err);
@@ -102,10 +103,8 @@ server.get('/:link', function(req,res){
     else{
       click = {
         "link_id": link_id, 
-        "user_agent": req.header('User-Agent'), 
-        "referrer": req.header('Referrer'), 
-        "from": req.header('From'), 
-        "time": new Date() 
+        "time": new Date(),
+        "http_headers": req.headers
       };
       Clicks.save(click,function(){})
       res.redirect(items[0].url);
