@@ -1,52 +1,33 @@
 var connect = require('connect'),
     express = require('express'),
-    mongoose = require('mongoose'),
     sys = require('sys'),
-    port = (process.env.PORT || 8081);
+    port = (process.env.PORT || 8081),
+    mongoose = require('mongoose'),
+    db = mongoose.connect('mongodb://localhost/janus');
 
-require('./models/links');
-require('./models/clicks');
 
-mongoose.connect('mongodb://localhost/janus'); // connect to mongo
+var Schema = mongoose.Schema,
+    ObjectId = Schema.ObjectId;
+
+var Link = new Schema({
+    id: ObjectId,
+    link_id: String,
+    url: String,
+    generate_date: {type: Date, default: Date.now},
+
+}); 
+mongoose.model('Link',Link);
+
+var Click = new Schema({
+    id : ObjectId,
+    link_id: String,
+    time: {type: Date, default: Date.now},
+    http_headers: {}
+});
+mongoose.model('Click',Click);
+
 var link = mongoose.model('Link');
 var click = mongoose.model('Click');
-
-/*
-var Clicks = require('./model').Model;
-
-//findByLinkId
-Links.prototype.findByLinkId = function(lid, callback) {
-    this.getCollection(function(error, collection) {
-      if( error ) callback(error)
-      else {
-        collection.findOne({link_id: lid}, function(error, result) {
-          if( error ) callback(error)
-          else callback(null, result)
-        });
-      }
-    });
-};
-
-Clicks.prototype.findByLinkId = function(lid, callback) {
-    this.getCollection(function(error, collection) {
-      if( error ) callback(error)
-      else {
-        collection.find({link_id: lid}, function(error, cursor) {
-          if( error ) callback(error)
-          else {
-            cursor.toArray(function(error, results) {
-              if( error ) callback(error)
-              else callback(null, results)
-            });
-           }
-        });
-      }
-    });
-};
-
-Links = new Model('links','janus','localhost', 27017);
-Clicks = new Model('clicks','janus','localhost',27017);
-*/
 
 // encode number (base10) as base52 [a-Z]
 function encode52(c) {
@@ -68,22 +49,22 @@ server.get('/', function(req,res){
 
 server.get('/generate', function(req,res){
   var url = req.query.url;
-  var link_count = 0;
-  Links.countAll(function(error,result){
-    link_count = result;
-    var short_code = encode52(link_count+1);
-    var link = {"link_id": short_code, "url": url}
-    Links.save(link, function(err,lnk){
-      res.send(lnk[0]);
-      console.log("Generated shorturl number " + link_count + " as "+ link.link_id +" for: " + link.url);
+  link.find({}, function(error,items){
+    var link_count = items.length+2;
+    var short_code = encode52(link_count);
+    var newLink = new link();
+    newLink.link_id = short_code;
+    newLink.url = url;
+    newLink.save(function(err){
     });
-  });
+    console.log("Generated shorturl number " + link_count + " as "+ newLink.link_id +" for: " + newLink.url);
+  });  
 });
 
 server.get('/clicks/:link', function(req,res){
   var link_id = req.params.link;
   console.log('find click requests for link_id ' + link_id);
-  Clicks.findByLinkId(link_id, function(err,items){
+  click.find({'link_id':link_id}, function(err,items){
     if(err)
       console.log(err);
     else if(items=='undefined') 
